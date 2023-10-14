@@ -7,14 +7,15 @@ public class MeshCreator : MonoBehaviour
     private void Awake()
     {
         MeshFilter filter = GetComponent<MeshFilter>();
-        filter.mesh = GetMesh_Improved();
+        filter.sharedMesh = new Mesh();
+        GetMesh_Improved(filter.sharedMesh);
     }
 
-    private static Mesh GetMesh_Improved()
+    // 엄밀하게 따지자면, worst와 improved는 같은 기능을 수행하지 않음.
+    // improved는 매개변수로 넘어온 mesh를 수정하는 것이고, worst는 아예 새로 생성하는 것
+    // 매 시도마다 새로운 모양이 필요하다면, Mesh를 새로 생성하는 것 또한 가비지가 발생해 부담이 될 수 있음.
+    private static void GetMesh_Improved(Mesh mesh)
     {
-        // Mesh를 매번 생성하는 것이 크게 문제 될 정도로 클래스가 크지 않음. 풀링해도 무방
-        Mesh mesh = new Mesh();
-
         // ArrayPool로부터 '최소' 크기가 3인 배열을 빌려 옴. 주어진 크기보다 크거나 같을 수 있음을 유의해야 함.
         Vector3[] vertices = ArrayPool<Vector3>.Shared.Rent(3);
         int[] triangles = ArrayPool<int>.Shared.Rent(3);
@@ -31,6 +32,8 @@ public class MeshCreator : MonoBehaviour
         // mesh.vertices = vertices;
         // mesh.triangles = triangles;
 
+        // triangles에 새로 기록하려면 Clear가 반드시 필요하다.
+        mesh.Clear();
         // vertices를 0번부터 시작하여 3개만큼 복사하도록 한다.
         mesh.SetVertices(vertices, 0, 3);
         // triangles를 0번부터 시작하여 3개만큼 복사하도록 한다. 마지막 0는 기본 submesh 번호
@@ -39,8 +42,6 @@ public class MeshCreator : MonoBehaviour
         // 풀 반납
         ArrayPool<Vector3>.Shared.Return(vertices);
         ArrayPool<int>.Shared.Return(triangles);
-
-        return mesh;
     }
 
     private static Mesh GetMesh_Worst()
